@@ -1,250 +1,294 @@
 ﻿using System;
 
-public class SquareMatrix
+namespace MatrixCalculator
 {
-    private int[,] _matrix;
+  public class SquareMatrix
+  {
+    private readonly int[,] _matrixData;
     public int Size { get; }
 
     public SquareMatrix(int size)
     {
-        Size = size;
-        _matrix = new int[size, size];
-        var random = new Random();
-        for (int i = 0; i < size; i++)
-            for (int j = 0; j < size; j++)
-                _matrix[i, j] = random.Next(1, 10);
+      Size = size;
+      _matrixData = new int[size, size];
+      var randomGenerator = new Random();
+      
+      for (int rowIndex = 0; rowIndex < size; ++rowIndex)
+      {
+        for (int columnIndex = 0; columnIndex < size; ++columnIndex)
+        {
+          _matrixData[rowIndex, columnIndex] = randomGenerator.Next(1, 10);
+        }
+      }
     }
 
-    public int this[int i, int j]
+    public int this[int row, int column]
     {
-        get => _matrix[i, j];
-        set => _matrix[i, j] = value;
+      get => _matrixData[row, column];
+      set => _matrixData[row, column] = value;
     }
 
     public override string ToString()
     {
-        string result = "";
-        for (int i = 0; i < Size; i++)
+      var result = new System.Text.StringBuilder();
+      
+      for (int rowIndex = 0; rowIndex < Size; ++rowIndex)
+      {
+        for (int columnIndex = 0; columnIndex < Size; ++columnIndex)
         {
-            for (int j = 0; j < Size; j++)
-                result += $"{_matrix[i, j]}\t";
-            result += "\n";
+          result.Append($"{_matrixData[rowIndex, columnIndex]}\t");
         }
-        return result;
+        result.AppendLine();
+      }
+      
+      return result.ToString();
     }
-}
+  }
 
-public static class MatrixOperations
-{
-    public static SquareMatrix Add(SquareMatrix a, SquareMatrix b)
+  public static class MatrixOperations
+  {
+    public static SquareMatrix AddMatrices(SquareMatrix firstMatrix, SquareMatrix secondMatrix)
     {
-        if (a.Size != b.Size) throw new ArgumentException("Размеры матриц не совпадают");
+      if (firstMatrix.Size != secondMatrix.Size)
+      {
+        throw new ArgumentException("Размеры матрицы должны совпадать для сложения");
+      }
 
-        var result = new SquareMatrix(a.Size);
-        for (int i = 0; i < a.Size; i++)
-            for (int j = 0; j < a.Size; j++)
-                result[i, j] = a[i, j] + b[i, j];
-        return result;
+      var resultMatrix = new SquareMatrix(firstMatrix.Size);
+      
+      for (int rowIndex = 0; rowIndex < firstMatrix.Size; ++rowIndex)
+      {
+        for (int columnIndex = 0; columnIndex < firstMatrix.Size; ++columnIndex)
+        {
+          resultMatrix[rowIndex, columnIndex] = firstMatrix[rowIndex, columnIndex] + secondMatrix[rowIndex, columnIndex];
+        }
+      }
+      
+      return resultMatrix;
     }
 
-    public static SquareMatrix Multiply(SquareMatrix a, SquareMatrix b)
+    public static SquareMatrix MultiplyMatrices(SquareMatrix firstMatrix, SquareMatrix secondMatrix)
     {
-        if (a.Size != b.Size) throw new ArgumentException("Размеры матриц не совпадают");
+      if (firstMatrix.Size != secondMatrix.Size)
+      {
+        throw new ArgumentException("Размеры матрицы должны совпадать для умножения");
+      }
 
-        var result = new SquareMatrix(a.Size);
-        for (int i = 0; i < a.Size; i++)
-            for (int j = 0; j < a.Size; j++)
-                for (int k = 0; k < a.Size; k++)
-                    result[i, j] += a[i, k] * b[k, j];
-        return result;
+      var resultMatrix = new SquareMatrix(firstMatrix.Size);
+      
+      for (int rowIndex = 0; rowIndex < firstMatrix.Size; ++rowIndex)
+      {
+        for (int columnIndex = 0; columnIndex < firstMatrix.Size; ++columnIndex)
+        {
+          for (int innerIndex = 0; innerIndex < firstMatrix.Size; ++innerIndex)
+          {
+            resultMatrix[rowIndex, columnIndex] += firstMatrix[rowIndex, innerIndex] * secondMatrix[innerIndex, columnIndex];
+          }
+        }
+      }
+      
+      return resultMatrix;
     }
 
-    public static SquareMatrix Transpose(SquareMatrix m)
+    public static SquareMatrix TransposeMatrix(SquareMatrix matrix)
     {
-        var result = new SquareMatrix(m.Size);
-        for (int i = 0; i < m.Size; i++)
-            for (int j = 0; j < m.Size; j++)
-                result[j, i] = m[i, j];
-        return result;
+      var transposedMatrix = new SquareMatrix(matrix.Size);
+      
+      for (int rowIndex = 0; rowIndex < matrix.Size; ++rowIndex)
+      {
+        for (int columnIndex = 0; columnIndex < matrix.Size; ++columnIndex)
+        {
+          transposedMatrix[columnIndex, rowIndex] = matrix[rowIndex, columnIndex];
+        }
+      }
+      
+      return transposedMatrix;
     }
 
-    public static int Trace(SquareMatrix m)
+    public static int CalculateTrace(SquareMatrix matrix)
     {
-        int trace = 0;
-        for (int i = 0; i < m.Size; i++)
-            trace += m[i, i];
-        return trace;
+      int trace = 0;
+      
+      for (int diagonalIndex = 0; diagonalIndex < matrix.Size; ++diagonalIndex)
+      {
+        trace += matrix[diagonalIndex, diagonalIndex];
+      }
+      
+      return trace;
     }
-}
+  }
 
-public abstract class MatrixHandler
-{
-    protected MatrixHandler successor;
+  public abstract class MatrixOperationHandler
+  {
+    protected MatrixOperationHandler _nextHandler;
 
-    public void SetSuccessor(MatrixHandler successor)
+    public void SetNextHandler(MatrixOperationHandler nextHandler)
     {
-        this.successor = successor;
+      _nextHandler = nextHandler;
     }
 
-    public abstract void HandleRequest(int choice, SquareMatrix m1, SquareMatrix m2);
-}
+    public abstract void HandleRequest(int operationChoice, SquareMatrix firstMatrix, SquareMatrix secondMatrix);
+  }
 
-public class ShowHandler : MatrixHandler
-{
-    public override void HandleRequest(int choice, SquareMatrix m1, SquareMatrix m2)
+  public class MatrixDisplayHandler : MatrixOperationHandler
+  {
+    public override void HandleRequest(int operationChoice, SquareMatrix firstMatrix, SquareMatrix secondMatrix)
     {
-        if (choice == 1)
-        {
-            Console.WriteLine("Матрица 1:");
-            Console.WriteLine(m1);
-            Console.WriteLine("Матрица 2:");
-            Console.WriteLine(m2);
-        }
-        else if (successor != null)
-        {
-            successor.HandleRequest(choice, m1, m2);
-        }
+      if (operationChoice == 1)
+      {
+        Console.WriteLine("Первая матрица:");
+        Console.WriteLine(firstMatrix);
+        Console.WriteLine("Вторая матрица:");
+        Console.WriteLine(secondMatrix);
+      }
+      else if (_nextHandler != null)
+      {
+        _nextHandler.HandleRequest(operationChoice, firstMatrix, secondMatrix);
+      }
     }
-}
+  }
 
-public class AddHandler : MatrixHandler
-{
-    public override void HandleRequest(int choice, SquareMatrix m1, SquareMatrix m2)
+  public class MatrixAdditionHandler : MatrixOperationHandler
+  {
+    public override void HandleRequest(int operationChoice, SquareMatrix firstMatrix, SquareMatrix secondMatrix)
     {
-        if (choice == 2)
+      if (operationChoice == 2)
+      {
+        try
         {
-            try
-            {
-                Console.WriteLine("Сумма матриц:");
-                Console.WriteLine(MatrixOperations.Add(m1, m2));
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Ошибка: {ex.Message}");
-            }
+          Console.WriteLine("Сумма матриц:");
+          Console.WriteLine(MatrixOperations.AddMatrices(firstMatrix, secondMatrix));
         }
-        else if (successor != null)
+        catch (Exception exception)
         {
-            successor.HandleRequest(choice, m1, m2);
+          Console.WriteLine($"Ошибка: {exception.Message}");
         }
+      }
+      else if (_nextHandler != null)
+      {
+        _nextHandler.HandleRequest(operationChoice, firstMatrix, secondMatrix);
+      }
     }
-}
+  }
 
-public class MultiplyHandler : MatrixHandler
-{
-    public override void HandleRequest(int choice, SquareMatrix m1, SquareMatrix m2)
+  public class MatrixMultiplicationHandler : MatrixOperationHandler
+  {
+    public override void HandleRequest(int operationChoice, SquareMatrix firstMatrix, SquareMatrix secondMatrix)
     {
-        if (choice == 3)
+      if (operationChoice == 3)
+      {
+        try
         {
-            try
-            {
-                Console.WriteLine("Произведение матриц:");
-                Console.WriteLine(MatrixOperations.Multiply(m1, m2));
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Ошибка: {ex.Message}");
-            }
+          Console.WriteLine("Произведение матриц:");
+          Console.WriteLine(MatrixOperations.MultiplyMatrices(firstMatrix, secondMatrix));
         }
-        else if (successor != null)
+        catch (Exception exception)
         {
-            successor.HandleRequest(choice, m1, m2);
+          Console.WriteLine($"Ошибка: {exception.Message}");
         }
+      }
+      else if (_nextHandler != null)
+      {
+        _nextHandler.HandleRequest(operationChoice, firstMatrix, secondMatrix);
+      }
     }
-}
+  }
 
-public class TransposeHandler : MatrixHandler
-{
-    public override void HandleRequest(int choice, SquareMatrix m1, SquareMatrix m2)
+  public class MatrixTranspositionHandler : MatrixOperationHandler
+  {
+    public override void HandleRequest(int operationChoice, SquareMatrix firstMatrix, SquareMatrix secondMatrix)
     {
-        if (choice == 4)
-        {
-            Console.WriteLine("Транспонированная матрица 1:");
-            Console.WriteLine(MatrixOperations.Transpose(m1));
-        }
-        else if (successor != null)
-        {
-            successor.HandleRequest(choice, m1, m2);
-        }
+      if (operationChoice == 4)
+      {
+        Console.WriteLine("Транспонированная первая матрица:");
+        Console.WriteLine(MatrixOperations.TransposeMatrix(firstMatrix));
+      }
+      else if (_nextHandler != null)
+      {
+        _nextHandler.HandleRequest(operationChoice, firstMatrix, secondMatrix);
+      }
     }
-}
+  }
 
-public class TraceHandler : MatrixHandler
-{
-    public override void HandleRequest(int choice, SquareMatrix m1, SquareMatrix m2)
+  public class MatrixTraceHandler : MatrixOperationHandler
+  {
+    public override void HandleRequest(int operationChoice, SquareMatrix firstMatrix, SquareMatrix secondMatrix)
     {
-        if (choice == 5)
-        {
-            Console.WriteLine($"След матрицы 1: {MatrixOperations.Trace(m1)}");
-        }
-        else if (successor != null)
-        {
-            successor.HandleRequest(choice, m1, m2);
-        }
+      if (operationChoice == 5)
+      {
+        Console.WriteLine($"След первой матрицы: {MatrixOperations.CalculateTrace(firstMatrix)}");
+      }
+      else if (_nextHandler != null)
+      {
+        _nextHandler.HandleRequest(operationChoice, firstMatrix, secondMatrix);
+      }
     }
-}
+  }
 
-public class NewMatricesHandler : MatrixHandler
-{
-    public override void HandleRequest(int choice, SquareMatrix m1, SquareMatrix m2)
+  public class MatrixRecreationHandler : MatrixOperationHandler
+  {
+    public override void HandleRequest(int operationChoice, SquareMatrix firstMatrix, SquareMatrix secondMatrix)
     {
-        if (choice == 6)
-        {
-            Console.Write("Введите новый размер матриц: ");
-            int size = int.Parse(Console.ReadLine());
-            m1 = new SquareMatrix(size);
-            m2 = new SquareMatrix(size);
-            Console.WriteLine("Созданы новые матрицы");
-        }
-        else if (successor != null)
-        {
-            successor.HandleRequest(choice, m1, m2);
-        }
+      if (operationChoice == 6)
+      {
+        Console.Write("Введите размер новых матриц: ");
+        int newSize = int.Parse(Console.ReadLine());
+        firstMatrix = new SquareMatrix(newSize);
+        secondMatrix = new SquareMatrix(newSize);
+        Console.WriteLine("Новые матрицы созданы");
+      }
+      else if (_nextHandler != null)
+      {
+        _nextHandler.HandleRequest(operationChoice, firstMatrix, secondMatrix);
+      }
     }
-}
+  }
 
-class Program
-{
-    static void Main(string[] args)
+  public class Program
+  {
+    public static void Main(string[] args)
     {
-        Console.WriteLine("Калькулятор матриц (Цепочка ответственности)");
-        Console.Write("Введите размер матриц: ");
-        int size = int.Parse(Console.ReadLine());
+      Console.WriteLine("Матричный калькулятор");
+      Console.Write("Введите размер матрицы: ");
+      int matrixSize = int.Parse(Console.ReadLine());
 
-        SquareMatrix matrix1 = new SquareMatrix(size);
-        SquareMatrix matrix2 = new SquareMatrix(size);
+      SquareMatrix firstMatrix = new SquareMatrix(matrixSize);
+      SquareMatrix secondMatrix = new SquareMatrix(matrixSize);
 
-        // Создаем цепочку обработчиков
-        var showHandler = new ShowHandler();
-        var addHandler = new AddHandler();
-        var multiplyHandler = new MultiplyHandler();
-        var transposeHandler = new TransposeHandler();
-        var traceHandler = new TraceHandler();
-        var newHandler = new NewMatricesHandler();
+      var displayHandler = new MatrixDisplayHandler();
+      var additionHandler = new MatrixAdditionHandler();
+      var multiplicationHandler = new MatrixMultiplicationHandler();
+      var transpositionHandler = new MatrixTranspositionHandler();
+      var traceHandler = new MatrixTraceHandler();
+      var recreationHandler = new MatrixRecreationHandler();
 
-        showHandler.SetSuccessor(addHandler);
-        addHandler.SetSuccessor(multiplyHandler);
-        multiplyHandler.SetSuccessor(transposeHandler);
-        transposeHandler.SetSuccessor(traceHandler);
-        traceHandler.SetSuccessor(newHandler);
+      displayHandler.SetNextHandler(additionHandler);
+      additionHandler.SetNextHandler(multiplicationHandler);
+      multiplicationHandler.SetNextHandler(transpositionHandler);
+      transpositionHandler.SetNextHandler(traceHandler);
+      traceHandler.SetNextHandler(recreationHandler);
 
-        while (true)
+      while (true)
+      {
+        Console.WriteLine("\nМеню:");
+        Console.WriteLine("1. Показать матрицы");
+        Console.WriteLine("2. Сложить матрицы");
+        Console.WriteLine("3. Перемножение матриц");
+        Console.WriteLine("4. Транспонирование первой матрицы");
+        Console.WriteLine("5. Посчитать след первой матрицы");
+        Console.WriteLine("6. Создать новые матрицы");
+        Console.WriteLine("7. Выход");
+
+        Console.Write("Выбор действия: ");
+        int selectedOperation = int.Parse(Console.ReadLine());
+
+        if (selectedOperation == 7)
         {
-            Console.WriteLine("\nМеню:");
-            Console.WriteLine("1. Показать матрицы");
-            Console.WriteLine("2. Сложить матрицы");
-            Console.WriteLine("3. Умножить матрицы");
-            Console.WriteLine("4. Транспонировать матрицу 1");
-            Console.WriteLine("5. Найти след матрицы 1");
-            Console.WriteLine("6. Создать новые матрицы");
-            Console.WriteLine("7. Выход");
-
-            Console.Write("Выберите действие: ");
-            int choice = int.Parse(Console.ReadLine());
-
-            if (choice == 7) break;
-
-            showHandler.HandleRequest(choice, matrix1, matrix2);
+          break;
         }
+
+        displayHandler.HandleRequest(selectedOperation, firstMatrix, secondMatrix);
+      }
     }
+  }
 }
