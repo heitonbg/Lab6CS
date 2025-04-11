@@ -5,6 +5,9 @@ public class SquareMatrix
     private int[,] _matrix;
     private int _size;
 
+    public int Size => _size;
+    public int[,] Matrix => _matrix;
+
     public SquareMatrix(int size)
     {
         _size = size;
@@ -84,6 +87,35 @@ public class SquareMatrix
     }
 }
 
+// Расширяющие методы
+public static class SquareMatrixExtensions
+{
+    // Транспонирование матрицы
+    public static SquareMatrix Transpose(this SquareMatrix matrix)
+    {
+        int[,] transposed = new int[matrix.Size, matrix.Size];
+        for (int i = 0; i < matrix.Size; i++)
+        {
+            for (int j = 0; j < matrix.Size; j++)
+            {
+                transposed[j, i] = matrix.Matrix[i, j];
+            }
+        }
+        return new SquareMatrix(transposed);
+    }
+
+    // Нахождение следа матрицы (сумма диагональных элементов)
+    public static int Trace(this SquareMatrix matrix)
+    {
+        int trace = 0;
+        for (int i = 0; i < matrix.Size; i++)
+        {
+            trace += matrix.Matrix[i, i];
+        }
+        return trace;
+    }
+}
+
 class Program
 {
     static void Main(string[] args)
@@ -102,8 +134,10 @@ class Program
             Console.WriteLine("1. Показать матрицы");
             Console.WriteLine("2. Сложить матрицы");
             Console.WriteLine("3. Умножить матрицы");
-            Console.WriteLine("4. Создать новые матрицы");
-            Console.WriteLine("5. Выход");
+            Console.WriteLine("4. Транспонировать матрицу 1");
+            Console.WriteLine("5. Найти след матрицы 1");
+            Console.WriteLine("6. Создать новые матрицы");
+            Console.WriteLine("7. Выход");
 
             Console.Write("Выберите действие: ");
             int choice = int.Parse(Console.ReadLine());
@@ -144,6 +178,17 @@ class Program
                     break;
 
                 case 4:
+                    SquareMatrix transposed = matrix1.Transpose();
+                    Console.WriteLine("\nТранспонированная матрица 1:");
+                    Console.WriteLine(transposed);
+                    break;
+
+                case 5:
+                    int trace = matrix1.Trace();
+                    Console.WriteLine($"\nСлед матрицы 1: {trace}");
+                    break;
+
+                case 6:
                     Console.Write("Введите новый размер матриц: ");
                     size = int.Parse(Console.ReadLine());
                     matrix1 = new SquareMatrix(size);
@@ -151,7 +196,7 @@ class Program
                     Console.WriteLine("Созданы новые матрицы.");
                     break;
 
-                case 5:
+                case 7:
                     return;
 
                 default:
